@@ -87,14 +87,14 @@ describe User do
 
       # Change user's email to trigger the subscription
       user.email = "new_email@test.com"
-      
+
       expect(UserSubscribeJob).to receive(:perform_later)
       user.chimp_check
     end
 
     it 'unsubscribes when user changed to locked' do
       user = create(:user, lastverified: nil, locked: false)
-      
+
       # Lock the user's account to trigger unsubscription
       user.locked = true
 
@@ -104,7 +104,7 @@ describe User do
 
     it 'subscribes when user is changed to unlocked' do
       user = create(:user, lastverified: nil, locked: true)
-      
+
       # Unlock the user's account to trigger subscription
       user.locked = false
 
