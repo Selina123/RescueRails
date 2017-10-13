@@ -111,6 +111,9 @@ class User < ApplicationRecord
                        length: { within: 8..40 },
                        unless: Proc.new { |a| a.password.blank? }
 
+  validates :country, length: { is: 3 }
+  validate :country_is_supported
+
   geocoded_by :full_street_address
   after_validation :geocode
 
@@ -168,8 +171,6 @@ class User < ApplicationRecord
   scope :has_children_under_five, -> (status = true) { where(children_under_five: status) }
   scope :puppies_ok,              -> (status = true) { where(can_foster_puppies: status) }
   scope :has_parvo_house,         -> (status = true) { where(parvo_house: status) }
-
-  after_initialize :default_country_to_usa
 
   def has_password?(submitted_password)
     encrypted_password == encrypt(submitted_password)
@@ -253,7 +254,15 @@ class User < ApplicationRecord
       Digest::SHA2.hexdigest(string)
     end
 
-    def default_country_to_usa
-      self.country ||= "USA"
+    def country_is_supported
+      country = ISO3166::Country.find_country_by_alpha3(self.country)
+      if country.nil?
+        errors.add(:country, "is not recognized.")
+        return
+      end
+
+      unless CountryService.supported_country? country
+        errors.add(:country, "is not supported. Must be one of: #{CountryService.supported_country_names.join(', ')}.")
+      end
     end
 end
